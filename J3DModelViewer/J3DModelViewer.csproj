@@ -9,10 +9,12 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>J3DModelViewer</RootNamespace>
     <AssemblyName>J3DModelViewer</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -25,7 +27,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.1.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -38,7 +39,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -48,6 +49,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -58,6 +60,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
@@ -68,6 +71,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>resources\application_icon.ico</ApplicationIcon>
@@ -142,18 +146,54 @@
     </ApplicationDefinition>
     <Compile Include="Converters\GXLightMaskConverter.cs" />
     <Compile Include="Converters\VertexFormatDataTypeConverter.cs" />
+    <Compile Include="FileAssociationHelper.cs" />
     <Compile Include="Framework\FrameBuffer.cs" />
     <Compile Include="Framework\LineBatcher.cs" />
     <Compile Include="Framework\RelayCommand.cs" />
     <Compile Include="Framework\ScreenspaceQuad.cs" />
+    <Compile Include="ViewModel\Arc.cs" />
     <Compile Include="ViewModel\ColorUtils.cs" />
+    <Compile Include="ViewModel\IArc.cs" />
     <Compile Include="ViewModel\MaterialEditorViewModel.cs" />
+    <Compile Include="ViewModel\ArcViewModel.cs" />
+    <Compile Include="View\ArcImporter.xaml.cs">
+      <DependentUpon>ArcImporter.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\ExportOptions.xaml.cs">
+      <DependentUpon>ExportOptions.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\InfoTab.xaml.cs">
       <DependentUpon>InfoTab.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\PreviewTab.xaml.cs">
       <DependentUpon>PreviewTab.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WiiExplorer\ArchiveBase.cs" />
+    <Compile Include="WiiExplorer\ArcUtil.cs" />
+    <Compile Include="WiiExplorer\Extra Controls\ColourComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WiiExplorer\Extra Controls\ColourNumericUpDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WiiExplorer\Extra Controls\ColourTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WiiExplorer\FileStreamEx.cs" />
+    <Compile Include="WiiExplorer\Int24.cs" />
+    <Compile Include="WiiExplorer\MessageBox.cs" />
+    <Compile Include="WiiExplorer\RARC.cs" />
+    <Compile Include="WiiExplorer\Util.cs" />
+    <Compile Include="WiiExplorer\YAZ0\U8.cs" />
+    <Compile Include="WiiExplorer\YAZ0\YAY0.cs" />
+    <Page Include="View\ArcImporter.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\ExportOptions.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="View\InfoTab.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -199,11 +239,17 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Resource Include="View\application_icon.ico" />
+    <Resource Include="View\application_icon_old.ico" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <Resource Include="resources\application_icon.ico" />
+    <Resource Include="resources\application_icon_old.ico" />
+    <Content Include="resources\IOmanager.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="resources\shaders\UnlitTexture.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -213,6 +259,9 @@
     <Content Include="resources\shaders\TransformGizmoHighlight.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="resources\converter.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -253,7 +302,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="resources\model_normalstest.bmd">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>

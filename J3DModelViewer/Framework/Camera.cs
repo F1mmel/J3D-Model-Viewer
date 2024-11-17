@@ -85,11 +85,11 @@ namespace WindEditor
 
         public void Tick(float deltaTime)
         {
-            if (WInput.GetKeyDown(System.Windows.Input.Key.OemTilde))
+            if (WInput.GetKeyDown(System.Windows.Input.Key.L))
                 MoveType = MoveType == CameraMode.Flycam ? CameraMode.Orbit : CameraMode.Flycam;
 
-            if (!WInput.GetMouseButton(1))
-                return;
+            /*if (!WInput.GetMouseButton(1))
+                return;*/
 
             if (MoveType == CameraMode.Flycam)
                 DoFlycamUpdate(deltaTime);

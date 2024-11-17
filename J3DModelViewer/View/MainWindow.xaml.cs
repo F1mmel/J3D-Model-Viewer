@@ -1,10 +1,16 @@
-﻿using J3DModelViewer.ViewModel;
+﻿using J3DModelViewer.View;
+using J3DModelViewer.ViewModel;
 using OpenTK;
 using OpenTK.Graphics;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,6 +22,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WindEditor;
+using System.Windows.Interop;
 
 namespace J3DModelViewer
 {
@@ -28,7 +35,60 @@ namespace J3DModelViewer
 
         public MainWindow()
         {
+            //FileAssociationHelper.AssociateFileExtension(".arc", "ArcViewer", "View arc files", System.Windows.Forms.Application.ExecutablePath);
+
+
+
             InitializeComponent();
+
+            Process instance = CheckInstancesFromRunningProcesses();
+            if (instance != null)
+            {
+                string[] args = Environment.GetCommandLineArgs();
+                string correctArg = "";
+
+                if (args.Length >= 1)
+                {
+                    foreach (string a in args)
+                    {
+                        if (a.EndsWith(".arc"))
+                        {
+                            correctArg = a;
+                            break;
+                        }
+                    }
+
+                    SendDataMessage(instance, correctArg);
+                    //System.Windows.Forms.MessageBox.Show("Sendd: " + correctArg + " to " + instance.ProcessName);
+
+                }
+
+
+                Environment.Exit(1);
+            }
+
+            Closing += OnWindowClosing;
+
+            this.tabArcViewer.Focus();
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
+            source.AddHook(WndProc);
+        }
+
+        public void OnWindowClosing(object sender, CancelEventArgs e)
+        {
+            foreach(string folder in ArcImporter.folders)
+            {
+                if(Directory.Exists(folder))
+                {
+                    Console.WriteLine("CleanUp: " + folder);
+                    Directory.Delete(folder, true);
+                }
+            }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -113,6 +173,99 @@ namespace J3DModelViewer
                     m_viewModel.OnFilesDropped(droppedFilePaths);
                 }
             }
+        }
+
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            string correctArg = "";
+
+            if (args.Length >= 1)
+            {
+                foreach (string a in args)
+                {
+                    if (a.EndsWith(".arc"))
+                    {
+                        correctArg = a;
+                        break;
+                    }
+                }
+
+                Console.WriteLine("Load arc: " + correctArg);
+                ArcImporter.INSTANCE.LoadArcFile(correctArg);
+            }
+        }
+
+        private Process CheckInstancesFromRunningProcesses()
+        {
+            Process currentProcess = Process.GetCurrentProcess();
+            Process[] allProcesses = Process.GetProcessesByName(currentProcess.ProcessName);
+
+            if (allProcesses.Length > 1)
+            {
+                return allProcesses[0];
+            }
+
+            return null;
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_COPYDATA)
+            {
+                //Reconstruct copy data structure
+                COPYDATASTRUCT _dataStruct = Marshal.PtrToStructure<COPYDATASTRUCT>(lParam);
+
+                //Get the messag (file name we sent from the other instance)
+                string _strMsg = Marshal.PtrToStringUni(_dataStruct.lpData, _dataStruct.cbData / 2);
+
+                ArcImporter.INSTANCE.LoadArcFile(_strMsg);
+            }
+
+
+            return IntPtr.Zero;
+        }
+
+        const int WM_COPYDATA = 0x004A;
+
+        [DllImport("user32", EntryPoint = "SendMessageA")]
+        private static extern int SendMessage(IntPtr Hwnd, int wMsg, IntPtr wParam, IntPtr lParam);
+
+        //.....
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct COPYDATASTRUCT
+        {
+            public IntPtr dwData;    // Any value the sender chooses. Perhaps its main window handle?
+            public int cbData;       // The count of bytes in the message.
+            public IntPtr lpData;    // The address of the message.
+        }
+
+        public static void SendDataMessage(Process targetProcess, string msg)
+        {
+            //Copy the string message to a global memory area in unicode format
+            IntPtr _stringMessageBuffer = Marshal.StringToHGlobalUni(msg);
+
+            //Prepare copy data structure
+            COPYDATASTRUCT _copyData = new COPYDATASTRUCT();
+            _copyData.dwData = IntPtr.Zero;
+            _copyData.lpData = _stringMessageBuffer;
+            _copyData.cbData = msg.Length * 2;   //Number of bytes required for marshalling 
+                                                 //this string as a series of unicode characters
+            IntPtr _copyDataBuff = IntPtrAlloc(_copyData);
+
+            //Send message to the other process
+            SendMessage(targetProcess.MainWindowHandle, WM_COPYDATA, IntPtr.Zero, _copyDataBuff);
+
+            Marshal.FreeHGlobal(_copyDataBuff);
+            Marshal.FreeHGlobal(_stringMessageBuffer);
+        }
+
+        public static IntPtr IntPtrAlloc<T>(T param)
+        {
+            IntPtr retval = Marshal.AllocHGlobal(Marshal.SizeOf(param));
+            Marshal.StructureToPtr(param, retval, false);
+            return retval;
         }
     }
 }

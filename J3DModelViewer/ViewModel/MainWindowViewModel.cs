@@ -15,6 +15,8 @@ using System.Windows;
 using System.Collections.Generic;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using JStudio.Framework;
+using J3DModelViewer.View;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace J3DModelViewer.ViewModel
 {
@@ -25,6 +27,7 @@ namespace J3DModelViewer.ViewModel
         public bool HasLoadedModel { get { return m_loadedModels.Count > 0; } }
         public J3D MainModel { get { return m_loadedModels.Count > 0 ? m_loadedModels[0] : null; } }
         public SceneGraphViewModel MainScenegraph { get { return m_sceneGraphs.Count > 0 ? m_sceneGraphs[0] : null; } }
+        public String ArcContents { get { return m_arcContents.Count > 0 ? m_arcContents[0] : null; } }
         public ModelRenderOptionsViewModel ViewOptions { get { return m_modelRenderOptions; } }
         public HighresScreenshotViewModel HighResScreenshot { get { return m_highresScreenshot; } }
 
@@ -55,7 +58,8 @@ namespace J3DModelViewer.ViewModel
         private WFrameBuffer m_frameBuffer;
 
         private List<J3D> m_loadedModels;
-        private List<SceneGraphViewModel> m_sceneGraphs;
+        public List<SceneGraphViewModel> m_sceneGraphs;
+        private List<String> m_arcContents;
 
         GXLight m_mainLight;
         GXLight m_secondaryLight;
@@ -64,8 +68,12 @@ namespace J3DModelViewer.ViewModel
         private ModelRenderOptionsViewModel m_modelRenderOptions;
         private WLineBatcher m_lineBatcher;
 
+        public static MainWindowViewModel INSTANCE;
+
         public MainWindowViewModel()
         {
+            INSTANCE = this;
+
             // Override the Current Directory with one we calculate ourself. This solves the problem of assigning the application as the
             // default application for a filetype and it having its CurrentDirectory be System32.
             Environment.CurrentDirectory = ApplicationExtensions.GetBasePath();
@@ -84,6 +92,12 @@ namespace J3DModelViewer.ViewModel
 
             Random rnd = new Random((int)DateTime.Now.ToBinary());
             m_glControlClearColor = ColorUtils.HSVtoRGB(new Vector3(rnd.Next(255) / 255f, 0.7f, 0.85f));
+
+            /*string path = "C:\\Users\\finno\\Downloads\\wwdumpsnd04\\Waves\\HomeMenu_0.aw";
+
+            var newModel = new J3D(Path.GetFileNameWithoutExtension(path));
+            using (EndianBinaryReader reader = new EndianBinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read), Endian.Big))
+                newModel.LoadAwFromStream(reader);*/
         }
 
         internal void OnMainEditorWindowLoaded(GLControl child)
@@ -172,7 +186,15 @@ namespace J3DModelViewer.ViewModel
             App.Current.MainWindow.Close();
         }
 
-        private void LoadAssetFromFilepath(string filePath, bool unloadExisting)
+        public void Unload()
+        {
+            foreach (var model in m_loadedModels)
+                model.Dispose();
+            m_loadedModels.Clear();
+            m_sceneGraphs.Clear();
+        }
+
+        public void LoadAssetFromFilepath(string filePath, bool unloadExisting)
         {
             if (!File.Exists(filePath))
                 Console.WriteLine("Cannot load: \"{0}\", not a file!", filePath);
@@ -187,11 +209,14 @@ namespace J3DModelViewer.ViewModel
                     {
                         if (unloadExisting)
                         {
+                            Console.WriteLine("UNLOAD");
+
                             foreach (var model in m_loadedModels)
                                 model.Dispose();
                             m_loadedModels.Clear();
                             m_sceneGraphs.Clear();
                         }
+                        Console.WriteLine("LOAD");
 
                         var newModel = new J3D(fileName);
                         using (EndianBinaryReader reader = new EndianBinaryReader(new FileStream(filePath, FileMode.Open, FileAccess.Read), Endian.Big))
@@ -201,7 +226,7 @@ namespace J3DModelViewer.ViewModel
                         newModel.SetHardwareLight(1, m_secondaryLight);
 
                         // Apply patches for Wind Waker by default, since they don't seem to break anything else.
-                        newModel.SetTextureOverride("ZBtoonEX", "resources/textures/ZBtoonEX.png");
+                        /*newModel.SetTextureOverride("ZBtoonEX", "resources/textures/ZBtoonEX.png");
                         newModel.SetTextureOverride("ZAtoon", "resources/textures/ZAtoon.png");
                         newModel.SetColorWriteOverride("eyeLdamA", false);
                         newModel.SetColorWriteOverride("eyeLdamB", false);
@@ -210,10 +235,10 @@ namespace J3DModelViewer.ViewModel
                         newModel.SetColorWriteOverride("eyeRdamA", false);
                         newModel.SetColorWriteOverride("eyeRdamB", false);
                         newModel.SetColorWriteOverride("mayuRdamA", false);
-                        newModel.SetColorWriteOverride("mayuRdamB", false);
+                        newModel.SetColorWriteOverride("mayuRdamB", false);*/
 
                         m_loadedModels.Add(newModel);
-                        m_sceneGraphs.Add(new SceneGraphViewModel(newModel, newModel.INF1Tag.HierarchyRoot, ""));
+                        //m_sceneGraphs.Add(new SceneGraphViewModel(newModel, newModel.INF1Tag.HierarchyRoot, ""));
                     }
                     break;
 
@@ -267,6 +292,7 @@ namespace J3DModelViewer.ViewModel
                             MainModel.LoadExternalMaterial(filePath);
 
                             // Automatically set the latest external material loaded.
+                            Console.WriteLine("Set material: " + fileName);
                             MainModel.SetExternalMaterial(fileName);
                         }
 
@@ -279,7 +305,7 @@ namespace J3DModelViewer.ViewModel
             if (PropertyChanged != null)
             {
                 PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MainModel"));
-                PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MainScenegraph"));
+                //PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MainScenegraph"));
                 PropertyChanged.Invoke(this, new PropertyChangedEventArgs("HasLoadedModel"));
             }
         }
@@ -475,6 +501,7 @@ namespace J3DModelViewer.ViewModel
                 j3d.Dispose();
 
             m_lineBatcher.ReleaseResources();
+            ExportOptions.SaveSettings();
         }
 
         private void DrawFixedGrid()
@@ -552,17 +579,20 @@ namespace J3DModelViewer.ViewModel
             if (sfd.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 string directoryName = Path.GetDirectoryName(sfd.FileName);
+                Console.WriteLine("DirName: " + directoryName);
                 Directory.CreateDirectory(directoryName);
 
                 for (int i = 0; i < m_loadedModels.Count; i++)
                 {
                     string exportName = Path.GetFileName(sfd.FileName);
+                    Console.WriteLine("exportName: " + exportName);
 
                     // If they have more than one model currently loaded, export each obj 
                     if (m_loadedModels.Count > 1)
                         exportName += string.Format("_{0}.obj", i.ToString("00"));
 
                     string exportPath = Path.Combine(directoryName, exportName);
+                    Console.WriteLine("exportPath: " + exportPath);
                     ObjExporter.Export(m_loadedModels[i], exportPath);
                 }
             }

@@ -1,0 +1,90 @@
+﻿<UserControl x:Class="J3DModelViewer.View.ArcImporter"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:J3DModelViewer.View"
+             xmlns:viewmodel="clr-namespace:J3DModelViewer.ViewModel"
+             mc:Ignorable="d" 
+             d:DesignHeight="640" d:DesignWidth="420">
+
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="600"/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer PreviewMouseWheel="ListViewScrollViewer_PreviewMouseWheel" Grid.Row="0">
+            <ItemsControl AllowDrop="True" Drop="Grid_Drop" DragOver="Grid_DragOver">
+                <!-- INF1 Data (Scenegraph) -->
+                <GroupBox x:Name="box" Header="ARC">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*" MinHeight="570"/>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Treeview -->
+                        <TreeView Name="contentTree" Grid.Row="1" MinHeight="45" Background="White"
+                              PreviewMouseRightButtonDown="OnPreviewMouseRightButtonDown"
+                                  ContextMenuOpening="Handle_AvailableOptions"
+                               Margin="0,0,0,0">
+
+                            <TreeView.ContextMenu>
+                                <ContextMenu Name="ContextMenu">
+                                    <MenuItem Name="exportFbx" Header="Export as .fbx"/>
+                                    <MenuItem Name="exportBmd" Header="Export as .bmd"/>
+                                    <MenuItem Name="exportAllFbx" Header="Export all as .fbx"/>
+                                    <MenuItem Name="exportAllBmd" Header="Export all as .bmd"/>
+                                    <MenuItem Name="exportAnimations" Header="Export animations"/>
+                                    <MenuItem Name="exportAnimation" Header="Export animation"/>
+                                </ContextMenu>
+                            </TreeView.ContextMenu>
+
+                            <TreeView.Resources>
+                                <SolidColorBrush Color="Silver" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
+                            </TreeView.Resources>
+
+                        </TreeView>
+
+                        <Canvas x:Name="Canvas" IsHitTestVisible="True"
+                               Visibility="Hidden">
+                            <Label x:Name="arcStatus"  IsHitTestVisible="True"
+                               Height="{Binding Path=ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Grid}}}" 
+                               Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Grid}}}" 
+                               VerticalContentAlignment="Center" 
+                               HorizontalContentAlignment="Center"
+                               FontSize="35"
+                               FontWeight="DemiBold" 
+                               DragLeave="Grid_DragLeave" >
+                                <TextBlock IsHitTestVisible="True" Text="Drop .arc file" TextWrapping="Wrap" Foreground="Black"/>
+                            </Label>
+                        </Canvas>
+
+                        <Canvas x:Name="canvasBar" Panel.ZIndex="1" IsHitTestVisible="True"
+                               Visibility="Hidden">
+                            <Label IsHitTestVisible="True" Panel.ZIndex="1000"
+                               Height="{Binding Path=ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Grid}}}" 
+                               Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Grid}}}" 
+                               VerticalContentAlignment="Center" 
+                               HorizontalContentAlignment="Center"
+                               FontSize="35"
+                               FontWeight="DemiBold">
+                                <ItemsControl>
+                                    <ProgressBar x:Name="upscaleBar" Minimum="0" Maximum="100" Value="75" Width="300" Height="40" Panel.ZIndex="1000"/>
+                                    <TextBlock Name="upscaleText" Text="Texture 1 / 5" Margin="0,-50,0,0" Height="45" VerticalAlignment="Center" HorizontalAlignment="Center" Panel.ZIndex="1000"/>
+                                </ItemsControl>
+
+                            </Label>
+                        </Canvas>
+                        <!-- Splitter -->
+                        <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch"/>
+                    </Grid>
+                </GroupBox>
+            </ItemsControl>
+        </ScrollViewer>
+        <Label Name="status"  Grid.Row="1" FontSize="17" Content=""/>
+    </Grid>
+</UserControl>

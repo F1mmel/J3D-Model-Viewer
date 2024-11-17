@@ -11,7 +11,8 @@
         xmlns:view="clr-namespace:J3DModelViewer.View"
         xmlns:viewmodel="clr-namespace:J3DModelViewer.ViewModel"
         mc:Ignorable="d"
-        Title="J3D Model Viewer" Height="720" Width="1280" Loaded="Window_Loaded" AllowDrop="True" Drop="Window_Drop" Icon="/J3DModelViewer;component/resources/application_icon.ico">
+        ContentRendered="Window_ContentRendered"
+        Title="J3D Model Viewer" Height="720" Width="1280" AllowDrop="True" Drop="Window_Drop" Loaded="Window_Loaded" Icon="/View/application_icon.ico">
     <Window.InputBindings>
         <KeyBinding Command="{Binding Path=OpenModelCommand}" Key="O" Modifiers="Ctrl"/>
     </Window.InputBindings>
@@ -45,14 +46,15 @@
                 <MenuItem Header="_Load Animation" Command="{Binding Path=LoadAnimationCommand}" IsEnabled="{Binding Path=HasLoadedModel}"/>
                 <MenuItem Header="_Close" Command="{Binding Path=CloseModelCommand}" IsEnabled="{Binding Path=HasLoadedModel}"/>
                 <Separator/>
-                <!-- <MenuItem Header="_Export...">
+                <MenuItem Header="_Export...">
                     <MenuItem Header="Export Mesh(es) to .obj" Command="{Binding Path=ExportMeshesToObjCommand}" IsEnabled="{Binding Path=HasLoadedModel}"/>
-                </MenuItem> 
-                <Separator/> -->
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="_Exit" Command="{Binding Path=ExitApplicationCommand}"/>
             </MenuItem>
 
             <MenuItem Header="_View">
+                <MenuItem Header="Ignore Alpha test" IsCheckable="True" IsChecked="{Binding Path=ViewOptions.IgnoreAlphaTest}"/>
                 <MenuItem Header="Show _Pivot" IsCheckable="True" IsChecked="{Binding Path=ViewOptions.ShowPivot}"/>
                 <MenuItem Header="Show _Grid" IsCheckable="True" IsChecked="{Binding Path=ViewOptions.ShowGrid}"/>
                 <Separator/>
@@ -95,8 +97,14 @@
                 <TabItem Header="Previewer">
                     <view:PreviewTab/>
                 </TabItem>
-                <TabItem Header="Info">
+                <!-- <TabItem Header="Info">
                     <view:InfoTab/>
+                </TabItem>-->
+                <TabItem Header="ArcViewer" Name="tabArcViewer">
+                    <view:ArcImporter/>
+                </TabItem>
+                <TabItem Header="ExportOptions">
+                    <view:ExportOptions/>
                 </TabItem>
             </TabControl>
         </Grid>

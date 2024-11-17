@@ -1,10 +1,32 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
+using J3DModelViewer.View;
+using JStudio.OpenGL;
 
 namespace J3DModelViewer.ViewModel
 {
     public class ModelRenderOptionsViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public bool IgnoreAlphaTest
+        {
+            get { return m_ignoreAlphaTest; }
+            set
+            {
+                Console.WriteLine("SET TO " + value);
+                m_ignoreAlphaTest = value;
+                OnPropertyChanged("IgnoreAlphaTest");
+
+                Shader.IgnoreAlphaTest = value;
+                Console.WriteLine("LOAD: " + ArcImporter.currentBMD);
+                if (!ArcImporter.currentBMD.Equals(""))
+                {
+                    Console.WriteLine("LOAD: " + ArcImporter.currentBMD);
+                    MainWindowViewModel.INSTANCE.LoadAssetFromFilepath(ArcImporter.currentBMD, true);
+                }
+            }
+        }
 
         public bool ShowPivot
         {
@@ -97,7 +119,8 @@ namespace J3DModelViewer.ViewModel
 			}
 		}
 
-		private bool m_showPivot;
+        private bool m_ignoreAlphaTest;
+        private bool m_showPivot;
         private bool m_showGrid;
         private bool m_animateLight;
         private bool m_showBoundingBox;
@@ -109,6 +132,7 @@ namespace J3DModelViewer.ViewModel
 
 		public ModelRenderOptionsViewModel()
         {
+            IgnoreAlphaTest = Properties.Settings.Default.IgnoreAlphaTest;
             ShowPivot = Properties.Settings.Default.ShowPivot;
             ShowGrid = Properties.Settings.Default.ShowGrid;
             AnimateLight = Properties.Settings.Default.AnimateLight;
@@ -122,6 +146,7 @@ namespace J3DModelViewer.ViewModel
 
 		public void SaveSettings()
         {
+            Properties.Settings.Default.IgnoreAlphaTest = IgnoreAlphaTest;
             Properties.Settings.Default.ShowPivot = ShowPivot;
             Properties.Settings.Default.ShowGrid = ShowGrid;
             Properties.Settings.Default.AnimateLight = AnimateLight;
